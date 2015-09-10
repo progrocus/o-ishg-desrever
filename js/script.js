@@ -5,36 +5,53 @@ window.onload = function(){
 	document.addEventListener('keydown', doKeyDown, true);
 
 	var cw = 400,
-			ch = 400;
+			ch = 400,
+			lastKey;
 	
 	function doKeyDown(e){
-		if(e.keyCode == 37){//right
+		if(e.keyCode == 37){//left
 			player.update("x", -50);
+			lastKey = "left";
 		}else if(e.keyCode == 38){//up
 			player.update("y", -50);
-		}else if(e.keyCode == 39){//left
+			lastKey = "up";
+		}else if(e.keyCode == 39){//right
 			player.update("x", 50);
+			lastKey = "right";
 		}else if (e.keyCode == 40){//down
 			player.update("y", 50);
+			lastKey = "down";
 		}else{
 			//do nothing
 		}
 	}
 	
-	var map = {
-	  name: "Level 1",
-	  walls: [2,3, 4],
-	  drawMap: function(){
-	    for (var i = 0; i < this.walls.length; i++){
-	      var x = this.walls[i] % 8;
-	      var y = Math.floor(this.walls[i] / 8);
-	      c.fillStyle = "white";
-	      c.fillRect(x * 50, y * 50, 50, 50);
-	      c.fillStyle = "#272D2D";
-	      roundedRect(c, x * 50 + 2, y * 50 + 2, 50 - 4, 50 - 4, 10);
-	    }
+	var levels = [
+	  {
+	    name: "Level 1",
+	    walls: [2,3,4]
+	  },
+	  {
+	    name: "Level 2",
+	    walls: [19,20,21]
 	  }
-	};
+	];
+	
+	
+	var walls = [];
+	
+	function Wall(I){
+	  I.w = 50;
+	  I.h = 50;
+	  I.color = "#272D2D";
+	  I.draw = function(){
+	    c.fillStyle = "white";
+	    c.fillRect(this.x, this.y, 50, 50);
+	    c.fillStyle = this.color;
+	    roundedRect(c, this.x + 2, this.y + 2, this.w - 4, this.h - 4, 9);
+	  }
+	  return I;
+	}
 	
 	function drawBoard(){
 		for (var x = 0; x <= cw; x += 50) {
@@ -79,6 +96,14 @@ window.onload = function(){
 		}
 	};
 	
+	function drawMap(){
+	  levels[1].walls.forEach(function(i){
+	    walls.push(Wall({
+	      x: (i%8 * 50),
+	      y: (Math.floor(i/8) * 50)
+	    }));
+	  })
+	}
 	
 	// Draw a rounded rectangle utility function
 	function roundedRect(ctx,x,y,width,height,radius){
@@ -94,23 +119,54 @@ window.onload = function(){
     ctx.quadraticCurveTo(x,y,x,y+radius);
     ctx.fill();
   }
+  
+  //Utility function that determines if something collides
+  function collides(a, b) {
+		return a.x == b.x &&
+      a.y == b.y;
+	}
+
+  function handleCollisionsWithWalls() {
+		walls.forEach(function(wall) {
+			if (collides(wall, player)) {
+			  console.log("collision");
+			  if(lastKey == "left"){
+			    player.update("x", 50);
+			  }else if(lastKey == "up"){
+			    player.update("y", 50);
+			  }else if(lastKey == "right"){
+			    player.update("x", -50);
+			  }else if(lastKey == "down"){
+			    player.update("y", -50);
+			  }else{
+			    //Do nothing
+			  }	
+			}
+		});
+		
+	}
 
 	function update(){
 		player.x = player.x.clamp(0, cw - player.width);
-		player.y = player.y.clamp(0, cw - player.height);
+		player.y = player.y.clamp(0, ch - player.height);
+		handleCollisionsWithWalls();
 	}
 
 	function draw(){
 		canvas.width = canvas.width;
 
 		drawBoard();
+		walls.forEach(function(wall){
+		  //console.log(wall);
+		  wall.draw();
+		})
 		player.draw();
-		map.drawMap();
 	}
 
 	var FPS = 30;
 
 	function start_game(){
+		drawMap();
 		refreshIntervalId = setInterval(function(){
 			update();
 			draw();
