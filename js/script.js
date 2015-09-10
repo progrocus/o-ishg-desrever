@@ -6,7 +6,9 @@ window.onload = function(){
 
 	var cw = 400,
 			ch = 400,
-			lastKey;
+			lastKey,
+			currentLevel = 0,
+			flipped = false;
 	
 	function doKeyDown(e){
 		if(e.keyCode == 37){//left
@@ -29,25 +31,29 @@ window.onload = function(){
 	var levels = [
 	  {
 	    name: "Level 1",
-	    walls: [2,3,4]
+	    walls: [2,3,4],
+	    triggers: [5],
+	    floors: [10,11,12]
 	  },
 	  {
 	    name: "Level 2",
-	    walls: [19,20,21]
+	    walls: [19,20,21],
+	    triggers: [6, 34],
+	    floors: []
 	  }
 	];
 	
 	
 	var walls = [];
+	var triggers = [];
+	var floors = [];
 	
-	function Wall(I){
+	function Tile(I){
 	  I.w = 50;
 	  I.h = 50;
-	  I.color = "#272D2D";
+	  I.colors = {"wall":"848887", "floor": "white", "trigger": "#F7EF99"};
 	  I.draw = function(){
-	    c.fillStyle = "white";
-	    c.fillRect(this.x, this.y, 50, 50);
-	    c.fillStyle = this.color;
+	    c.fillStyle = this.colors[this.type];
 	    roundedRect(c, this.x + 2, this.y + 2, this.w - 4, this.h - 4, 9);
 	  }
 	  return I;
@@ -69,7 +75,7 @@ window.onload = function(){
 		c.stroke();
 	}
 
-	/* CREATE THE PLAYER */
+	/* PLAYER  */
 	var player = {
 		bcolor: "white",
 		color: "#A846A0",
@@ -79,11 +85,8 @@ window.onload = function(){
 		y: 0,
 
 		draw: function(){
-		  c.fillStyle = this.bcolor;
-		  c.fillRect(this.x, this.y, this.width, this.height);
-			c.fillStyle = this.color;
-			c.strokeStyle = this.color;
-			roundedRect(c, this.x+3, this.y+3, this.width -6, this.height -6, 10);
+      c.fillStyle = this.color;
+			roundedRect(c, this.x+5, this.y+5, this.width -10, this.height -10, 10);
 		},
 
 		update: function(direction, value){
@@ -97,13 +100,62 @@ window.onload = function(){
 	};
 	
 	function drawMap(){
-	  levels[1].walls.forEach(function(i){
-	    walls.push(Wall({
+	  flipped = false;
+	  walls.length = 0;
+	  floors.length = 0;
+	  triggers.length = 0;
+	  levels[currentLevel].walls.forEach(function(i){
+	    walls.push(Tile({
 	      x: (i%8 * 50),
-	      y: (Math.floor(i/8) * 50)
+	      y: (Math.floor(i/8) * 50),
+	      type: "wall"
 	    }));
-	  })
+	  });
+	  levels[0].triggers.forEach(function(i){
+	    triggers.push(Tile({
+	      x: (i%8 * 50),
+	      y: (Math.floor(i/8) * 50),
+	      type: "trigger"
+	    }))
+	  });
+	  levels[0].floors.forEach(function(i){
+	    floors.push(Tile({
+	      x: (i%8 * 50),
+	      y: (Math.floor(i/8) * 50),
+	      type: "floor"
+	    }))
+	  });
 	}
+	
+	function flipMap(){
+	  flipped = true;
+	  walls.length = 0;
+	  floors.length = 0;
+	  triggers.length = 0;
+	  levels[currentLevel].walls.forEach(function(i){
+	    floors.push(Tile({
+	      x: (i%8 * 50),
+	      y: (Math.floor(i/8) * 50),
+	      type: "floor" 
+	    }))
+	  });
+	  levels[currentLevel].floors.forEach(function(i){
+	    walls.push(Tile({
+	      x: (i%8 * 50),
+	      y: (Math.floor(i/8) * 50),
+	      type: "wall" 
+	    }))
+	  });
+	  levels[0].triggers.forEach(function(i){
+	    triggers.push(Tile({
+	      x: (i%8 * 50),
+	      y: (Math.floor(i/8) * 50),
+	      type: "trigger"
+	    }))
+	  });
+	}
+	
+	/* UTILITY FUNCTIONS */
 	
 	// Draw a rounded rectangle utility function
 	function roundedRect(ctx,x,y,width,height,radius){
@@ -120,12 +172,13 @@ window.onload = function(){
     ctx.fill();
   }
   
-  //Utility function that determines if something collides
+  // Utility function that determines if something collides
   function collides(a, b) {
 		return a.x == b.x &&
       a.y == b.y;
 	}
 
+  // When player collides with Walls
   function handleCollisionsWithWalls() {
 		walls.forEach(function(wall) {
 			if (collides(wall, player)) {
@@ -143,8 +196,17 @@ window.onload = function(){
 			  }	
 			}
 		});
+		triggers.forEach(function(trigger){
+		  if(collides(trigger, player) && !flipped){
+		    //Switch the levels
+		    flipMap()
+		    //Take care of infinite loop
+		  }
+		})
 		
 	}
+
+  /* GAME FUNCTIONS */
 
 	function update(){
 		player.x = player.x.clamp(0, cw - player.width);
@@ -157,9 +219,11 @@ window.onload = function(){
 
 		drawBoard();
 		walls.forEach(function(wall){
-		  //console.log(wall);
 		  wall.draw();
-		})
+		});
+		triggers.forEach(function(trigger){
+		  trigger.draw();
+		});
 		player.draw();
 	}
 
