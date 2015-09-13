@@ -11,7 +11,8 @@ window.onload = function(){
 			flipped = false,
 			switched = 1,
 			goal,
-			start;
+			start,
+			refreshIntervalId;
 	
 	function doKeyDown(e){
 		if(e.keyCode == 37){//left
@@ -238,7 +239,6 @@ window.onload = function(){
   function handleCollisionsWithWalls() {
 		walls.forEach(function(wall) {
 			if (collides(wall, player)) {
-			  console.log("collision");
 			  if(lastKey == "left"){
 			    player.update("x", 50 * switched);
 			  }else if(lastKey == "up"){
@@ -254,7 +254,6 @@ window.onload = function(){
 		});
 		triggers.forEach(function(trigger){
 		  if(collides(trigger, player) && !flipped){
-		    console.log("triggered");
 		    flipMap()
 		    //Take care of infinite loop
 		  }
@@ -266,6 +265,9 @@ window.onload = function(){
 		})
 		if(collides(goal,player)){
 			currentLevel+=1;
+			if(currentLevel > levels.length){
+				end_game();
+			}
 			player.x = (levels[currentLevel].start % 8) * 50;
 			player.y = Math.floor(levels[currentLevel].start / 8) * 50;
 			console.log(currentLevel);
@@ -285,8 +287,6 @@ window.onload = function(){
 
 	function draw(){
 		canvas.width = canvas.width;
-
-		//drawBoard();
 		
 		triggers.forEach(function(t){
 		  t.draw();
@@ -325,7 +325,13 @@ window.onload = function(){
 	}
 
 	function end_game(){
-
+		clearInterval(refreshIntervalId);
+		canvas.width = canvas.width;
+		c.clearRect(0, 0, cw, ch);
+    c.fillStyle = "#272D2D";
+    c.font = "30px Georgia";
+    c.textAlign = "center";
+    c.fillText("Thanks for Playing!", cw / 2, ch / 2);
 	}
 
 	start_game();
