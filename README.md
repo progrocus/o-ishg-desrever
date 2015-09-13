@@ -1,5 +1,5 @@
 # desrever
-My entry for [js13kGames](http://2015.js13kgames.com/)
+My entry for [js13kGames](http://2015.js13kgames.com/).
 
 Use the Arrow Keys to move around and reach the Goal tile.
 
